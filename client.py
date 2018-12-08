@@ -81,14 +81,16 @@ def select(query):
     array = query.split()
     column = array[1]
     tableName = array[3]
-    subquery = ''
     print(column)
     print(tableName)
-    pattern = array[-1]
-    for i in array[5:-2]:
-        subquery = subquery + i
-    print(subquery)
-    print(pattern)
+    # if it consists only 'select' and 'from', it does not make 'subquery' and 'pattern' variables.
+    if len(array) > 4:
+        subquery = ''
+        pattern = array[-1]
+        for i in array[5:-2]:
+            subquery = subquery + i
+        print(subquery)
+        print(pattern)
 
 def update(query):
 
