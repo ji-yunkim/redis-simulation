@@ -125,30 +125,69 @@ def insert(r,query):
         print saddcomm
         exec(saddcomm)
 
-def select(self, query):
+def select(query):
+    # output : selecting column, tableName, subquery for where clause, pattern for like matching
     query = query.replace(';', '')
-    #query = query.replace('(','')
-    #query = query.replace(')','')
-    array = query.split( )
+    # it does not fliter '(' and ')'. they will be handled separately. To filter them, user the codes below.
+    # query = query.replace('(','')
+    # query = query.replace(')','')
+    array = query.split()
     column = array[1]
     tableName = array[3]
-    subquery = ''
     print(column)
     print(tableName)
-    print(array[5:])
-    for i in array[5:]:
-        subquery = subquery+i
-    print(subquery)
+    # if it consists only 'select' and 'from', it does not make 'subquery' and 'pattern' variables.
+    if len(array) > 4:
+        subquery = ''
+        pattern = array[-1]
+        for i in array[5:-2]:
+            subquery = subquery + i
+        print(subquery)
+        print(pattern)
 
 def update(query):
-
-    print(query)
+    # output : tableName, subquery for set, subquery for where
+    query = query.replace(';', '')
+    # it does not filter '(' and ')'. they will be handled separately. To filter them, user the codes below.
+    # query = query.replace('(','')
+    # query = query.replace(')','')
+    array = query.split()
+    tableName = array[1]
+    print(tableName)
+    pattern1 = 'set '
+    pattern2 = 'where '
+    s = re.compile(pattern1, re.IGNORECASE)
+    w = re.compile(pattern2, re.IGNORECASE)
+    matchSet = s.search(query)
+    matchWhere = w.search(query)
+    if matchWhere is not None:
+        setQuery = query[matchSet.end():matchWhere.start()]
+        whereQuery = query[matchWhere.end():]
+        print(setQuery)
+        print(whereQuery)
+    else:
+        setQuery = query[matchSet.end():]
+        print(setQuery)
 
 def delete(query):
-    print(query)
+    # output : tableName, subquery for set, subquery for where
+    query = query.replace(';', '')
+    # it does not filter '(' and ')'. they will be handled separately. To filter them, user the codes below.
+    # query = query.replace('(','')
+    # query = query.replace(')','')
+    array = query.split()
+    tableName = array[2]
+    print(tableName)
+    pattern2 = 'where '
+    w = re.compile(pattern2, re.IGNORECASE)
+    matchWhere = w.search(query)
+    if matchWhere is not None:
+        whereQuery = query[matchWhere.end():]
+        print(whereQuery)
 
-def show(query):
-    print(query)
+def showTables():
+    # blank!
+    print()
 
 if __name__ == '__main__':
     hello_redis()
