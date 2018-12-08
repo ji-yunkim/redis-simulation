@@ -24,14 +24,15 @@ def hello_redis():
                     update(query)
                 elif (query.split(" ")[0].upper() == "DELETE"):
                     delete(query)
-                elif (query.split(" ")[0].upper() == "SHOW"):
-                    show(query)
+                elif (query.split(" ")[0].upper() == "SHOW" and query.split(" ")[1].upper() == "TABLES"):
+                    showTables()
                 else :
                     raise NotImplementedError
         except Exception as e:
             print(e)
 
 def create(query):
+    # output : tableName, source (att1, val1, att2, val2...)
     # Check if the first word is 'create' and the second is 'table'
     query = query.replace(';','')
     array = query.split()
@@ -61,6 +62,7 @@ def create(query):
         print(source)
 
 def insert(query):
+    # output : tableName, source (att1, val1, att2, val2...)
     # Check if the first word is 'create' and the second is 'table'
     query = query.replace(';', '')
     array = query.split()
@@ -76,6 +78,7 @@ def insert(query):
         print(source)
 
 def select(query):
+    # output : selecting column, tableName, subquery for where clause, pattern for like matching
     query = query.replace(';', '')
     # it does not fliter '(' and ')'. they will be handled separately. To filter them, user the codes below.
     # query = query.replace('(','')
@@ -95,12 +98,14 @@ def select(query):
         print(pattern)
 
 def update(query):
+    # output : tableName, subquery for set, subquery for where
     query = query.replace(';', '')
     # it does not filter '(' and ')'. they will be handled separately. To filter them, user the codes below.
     # query = query.replace('(','')
     # query = query.replace(')','')
     array = query.split()
     tableName = array[1]
+    print(tableName)
     pattern1 = 'set '
     pattern2 = 'where '
     s = re.compile(pattern1, re.IGNORECASE)
@@ -117,10 +122,24 @@ def update(query):
         print(setQuery)
 
 def delete(query):
-    print(query)
+    # output : tableName, subquery for set, subquery for where
+    query = query.replace(';', '')
+    # it does not filter '(' and ')'. they will be handled separately. To filter them, user the codes below.
+    # query = query.replace('(','')
+    # query = query.replace(')','')
+    array = query.split()
+    tableName = array[2]
+    print(tableName)
+    pattern2 = 'where '
+    w = re.compile(pattern2, re.IGNORECASE)
+    matchWhere = w.search(query)
+    if matchWhere is not None:
+        whereQuery = query[matchWhere.end():]
+        print(whereQuery)
 
-def show(query):
-    print(query)
+def showTables():
+    # blank!
+    print()
 
 if __name__ == '__main__':
     hello_redis()
