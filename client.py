@@ -94,7 +94,6 @@ def select(query):
         print(subquery)
         print(pattern)
 
-#UPDATE T1 SET v1 = 2 WHERE v2 = 3
 def update(query):
     query = query.replace(';', '')
     # it does not filter '(' and ')'. they will be handled separately. To filter them, user the codes below.
@@ -102,7 +101,20 @@ def update(query):
     # query = query.replace(')','')
     array = query.split()
     tableName = array[1]
-    print(array)
+    pattern1 = 'set '
+    pattern2 = 'where '
+    s = re.compile(pattern1, re.IGNORECASE)
+    w = re.compile(pattern2, re.IGNORECASE)
+    matchSet = s.search(query)
+    matchWhere = w.search(query)
+    if matchWhere is not None:
+        setQuery = query[matchSet.end():matchWhere.start()]
+        whereQuery = query[matchWhere.end():]
+        print(setQuery)
+        print(whereQuery)
+    else:
+        setQuery = query[matchSet.end():]
+        print(setQuery)
 
 def delete(query):
     print(query)
