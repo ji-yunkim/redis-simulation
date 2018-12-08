@@ -1,4 +1,5 @@
 import redis
+import re
 
 redis_host = "localhost"
 redis_port = 6379
@@ -76,6 +77,7 @@ def insert(query):
 
 def select(query):
     query = query.replace(';', '')
+    # it does not fliter '(' and ')'. they will be handled separately. To filter them, user the codes below.
     # query = query.replace('(','')
     # query = query.replace(')','')
     array = query.split()
@@ -92,9 +94,15 @@ def select(query):
         print(subquery)
         print(pattern)
 
+#UPDATE T1 SET v1 = 2 WHERE v2 = 3
 def update(query):
-
-    print(query)
+    query = query.replace(';', '')
+    # it does not filter '(' and ')'. they will be handled separately. To filter them, user the codes below.
+    # query = query.replace('(','')
+    # query = query.replace(')','')
+    array = query.split()
+    tableName = array[1]
+    print(array)
 
 def delete(query):
     print(query)
