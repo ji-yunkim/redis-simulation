@@ -5,12 +5,20 @@ import re
 import errno
 import tempfile
 from time import time
+'''
+checkpoint 
+1. select and table structure (very top row) -> * 
+2. selection when "where" is in place (and like) 
+3. update after delete is complete
+4. delete when given value (not key)
+5. delete hash value as well as set index
+'''
 try:
     import cPickle as pickle
 except ImportError:  # pragma: no cover
     import pickle
 
-r=redis.Redis(host='localhost',port=6379,password=None, db=0)
+r = redis.StrictRedis(host='localhost',port=6379,charset="utf-8", password=None, db=0, decode_responses=True)
 
 def hello_redis():
     print("Welcome DB with NoSQL")
@@ -32,7 +40,7 @@ def hello_redis():
                 elif (query.split(" ")[0].upper() == "DELETE"):
                     delete(query)
                 elif (query.split(" ")[0].upper() == "SHOW"):
-                    show(query)
+                    show()
                 else :
                     raise NotImplementedError
         except Exception as e:
@@ -104,9 +112,9 @@ def insert(r,query):
         print(source)
 
         #col1, colT1, ...
-        strIn="".join("r.hmset (\""+tableName+"\", {")
+        strIn="".join("r.hmset (\""+source[0]+"\", {")
         cnt=1;
-        for i in range(len(source)):
+        for i in range(1,len(source)):
             strIn=strIn+" \"col"+str(cnt)+"\":\""+str(source[i])+"\""
             cnt=cnt+1
             if (i+1<len(source)):
@@ -131,19 +139,55 @@ def select(query):
     # it does not fliter '(' and ')'. they will be handled separately. To filter them, user the codes below.
     # query = query.replace('(','')
     # query = query.replace(')','')
-    array = query.split()
-    column = array[1]
-    tableName = array[3]
+    pattern0 = 'select '
+    pattern1 = 'from '
+    pattern2 = 'where '
+    pattern3 = 'like '
+    s = re.compile(pattern0, re.IGNORECASE)
+    f = re.compile(pattern1, re.IGNORECASE)
+    w = re.compile(pattern2, re.IGNORECASE)
+    l = re.compile(pattern3, re.IGNORECASE)
+    matchSelect = s.search(query)
+    matchFrom = f.search(query)
+    matchWhere = w.search(query)
+    matchLike = l.search(query)
+    column = query[matchSelect.end():matchFrom.start()]
     print(column)
-    print(tableName)
-    # if it consists only 'select' and 'from', it does not make 'subquery' and 'pattern' variables.
-    if len(array) > 4:
-        subquery = ''
-        pattern = array[-1]
-        for i in array[5:-2]:
-            subquery = subquery + i
-        print(subquery)
-        print(pattern)
+    if matchWhere is not None:
+        tableName = query[matchFrom.end():matchWhere.start()]
+        print(tableName)
+        if matchLike is not None:
+            whereQuery = query[matchWhere.end():matchLike.start()]
+            likeQuery = query[matchLike.end():]
+            print(whereQuery)
+            print(likeQuery)
+        else:
+            whereQuery = query[matchWhere.end():]
+            print(whereQuery)
+    else:
+        tableName = query[matchFrom.end():]
+        print(tableName)
+
+    #check if exist, if yes, return table
+    if column=="* ":
+        variables=r.smembers("SET:"+tableName)
+        colN = r.hgetall(tableName)
+        #first column not printing please check
+        s=''+colN['col1']
+        for c in range(1, len(variables) + 1):
+            colnum = "col" + str(c)
+            s=" | "+colN[colnum]
+        print s
+
+        for v in (variables):
+            var=r.hgetall(v)
+            print (str(v)+" | "+var[u'col1'])
+
+    elif (r.hexists(tableName,column)==1):
+        value=r.hget(tableName, column)
+        print(value)
+    else: return "No Column in Table"
+
 
 def update(query):
     # output : tableName, subquery for set, subquery for where
@@ -184,10 +228,29 @@ def delete(query):
     if matchWhere is not None:
         whereQuery = query[matchWhere.end():]
         print(whereQuery)
+        findK= whereQuery.split("=")
+        print findK[1]
+    if (r.sismember("SET:"+tableName, findK[1])):
+        r.srem("SET:"+tableName, findK[1])
+        #delete hash for memory efficiency
+        #r.hdel(str(findK[1]))
+        #method delete with key
 
-def showTables():
-    # blank!
-    print()
+        print ("OK")
+    #else: #delete with value
+        #search value
+        #find key
+        #delete with key (recursion?)
+
+
+def show():
+    #done
+    tablelist=r.smembers('tables')
+    print("Tables")
+    print ("-------------")
+    for t in tablelist:
+        newt=t.split(":")
+        print newt[1]
 
 if __name__ == '__main__':
     hello_redis()
