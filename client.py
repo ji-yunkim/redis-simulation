@@ -34,68 +34,77 @@ def hello_redis():
 def create(query):
     # output : tableName, source (att1, val1, att2, val2...)
     # Check if the first word is 'create' and the second is 'table'
-    query = query.replace(';','')
-    array = query.split()
-    if (array[0].lower() != 'create') or (array[1].lower() != 'table'):
-        raise NotImplementedError
-    else:
-        rawSource = array[2:]
-        noEmpty = []
-        source = []
-        for i in rawSource:
-            i = i.replace(' ','')
-            noEmpty.append(i)
-        if '(' not in noEmpty[0]:
-            tableName = noEmpty[0]
-        for i in noEmpty:
-            if '(' in i:
-                if i.split('(')[0] != '':
-                    tableName = i.split('(')[0]
-                i = i.split('(')[1]
-            if ')' in i:
-                i = i.replace(')','')
-            if ',' in i:
-                i = i.replace(',','')
-            if i !='' :
-                source.append(i)
-        print(tableName)
-        print(source)
+    pattern0 = 'table '
+    query = query.replace(';', '')
+    t = re.compile(pattern0, re.IGNORECASE)
+    matchTable = t.search(query)
+    realQuery = query[matchTable.end():]
+    tableName = realQuery.split('(')[0]
+    tableName = tableName.replace(' ','')
+    openingParen = realQuery.find('(')
+    realQuery = realQuery[openingParen+1:-1]
+    columnList = realQuery.split(',')
+    source =[]
+    for i in columnList:
+        temp = i.split( )
+        for j in temp:
+            source.append(j)
+    print(tableName)
+    print(source)
+
 
 def insert(query):
     # output : tableName, source (att1, val1, att2, val2...)
     # Check if the first word is 'create' and the second is 'table'
     query = query.replace(';', '')
-    array = query.split()
-    if (array[0].lower() != 'insert') or (array[1].lower() != 'into'):
-        raise NotImplementedError
-    else:
-        tableName = array[2]
-        query = query.split('(')[1]
-        query = query.replace(')','')
-        query = query.replace(' ','')
-        source = query.split(',')
-        print(tableName)
-        print(source)
+    pattern0 = 'insert into '
+    pattern1 = ' values'
+    i = re.compile(pattern0, re.IGNORECASE)
+    v = re.compile(pattern1, re.IGNORECASE)
+    matchInsertInto = i.search(query)
+    matchValues = v.search(query)
+    tableName = query[matchInsertInto.end():matchValues.start()]
+    rawSource = query[matchValues.end():]
+    halfRawQuery = rawSource.split('(')[1]
+    halfRawQuery = halfRawQuery.split(')')[0]
+    source = []
+    exec("source=["+halfRawQuery+"]")
+    print(tableName)
+    print(source)
 
 def select(query):
     # output : selecting column, tableName, subquery for where clause, pattern for like matching
     query = query.replace(';', '')
-    # it does not fliter '(' and ')'. they will be handled separately. To filter them, user the codes below.
-    # query = query.replace('(','')
-    # query = query.replace(')','')
-    array = query.split()
-    column = array[1]
-    tableName = array[3]
+    pattern0 = 'select '
+    pattern1 = 'from '
+    pattern2 = 'where '
+    pattern3 = 'like '
+    s = re.compile(pattern0, re.IGNORECASE)
+    f = re.compile(pattern1, re.IGNORECASE)
+    w = re.compile(pattern2, re.IGNORECASE)
+    l = re.compile(pattern3, re.IGNORECASE)
+    matchSelect = s.search(query)
+    matchFrom = f.search(query)
+    matchWhere = w.search(query)
+    matchLike = l.search(query)
+    column = query[matchSelect.end():matchFrom.start()]
     print(column)
-    print(tableName)
-    # if it consists only 'select' and 'from', it does not make 'subquery' and 'pattern' variables.
-    if len(array) > 4:
-        subquery = ''
-        pattern = array[-1]
-        for i in array[5:-2]:
-            subquery = subquery + i
-        print(subquery)
-        print(pattern)
+    if matchWhere is not None:
+        tableName = query[matchFrom.end():matchWhere.start()].split(' ')[0]
+        if matchLike is not None:
+            whereQuery = query[matchWhere.end():matchLike.start()]
+            likeQuery = query[matchLike.end():]
+            print(whereQuery)
+            print(likeQuery)
+        else:
+            # there's no 'like'.
+            whereQuery = query[matchWhere.end():]
+            print(whereQuery)
+    else:
+        tableName = query[matchFrom.end():]
+        print(tableName)
+
+
 
 def update(query):
     # output : tableName, subquery for set, subquery for where
